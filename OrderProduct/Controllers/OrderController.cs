@@ -18,18 +18,34 @@ public class OrderController : Controller
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Order>>> GetOrders()
+   public async Task<ActionResult<IEnumerable<OrderDto>>> GetOrders()
     {
         var orders = await _context.Orders
             .Include(o => o.OrderProducts)
             .ThenInclude(op => op.ProductInst)
+            .Select(o => new OrderDto
+            {
+                Id = o.OrderId,
+                CreatedAt = o.CreatedDate,
+                Products = o.OrderProducts
+                    .Select(op => new OrderGetItemDto
+                    {
+                        ProductId = op.ProductId,
+                        Name = op.ProductInst.Name,
+                        Description = op.ProductInst.Description,
+                        Price = op.ProductInst.Price,
+                        Count = op.Count
+                    })
+                    .ToList()
+
+            })
             .ToListAsync();
-        
+
         return Ok(orders);
     }
 
     [HttpGet("{id}")]
-     public async Task<ActionResult<Order>> GetOrder(int id)
+    public async Task<ActionResult<OrderDto>> GetOrder(int id)
     {
         var order = await _context.Orders
             .Include(o => o.OrderProducts)
@@ -39,11 +55,28 @@ public class OrderController : Controller
         if (order == null)
             return NotFound();
 
-        return Ok(order);
+        var dto = new OrderDto
+        {
+            Id = order.OrderId,
+            CreatedAt = order.CreatedDate,
+
+            Products = order.OrderProducts
+                .Select(op => new OrderGetItemDto
+                {
+                    ProductId = op.ProductId,
+                    Name = op.ProductInst.Name,
+                    Description = op.ProductInst.Description,
+                    Price = op.ProductInst.Price,
+                    Count = op.Count
+                })
+                .ToList()
+        };
+
+        return Ok(dto);
     }
 
     [HttpPost]
-     public async Task<ActionResult<Order>> CreateOrder(
+     public async Task<ActionResult<OrderDto>> CreateOrder(
         CreateOrderDto dto)
     {
         var order = new Order();

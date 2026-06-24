@@ -1,5 +1,6 @@
 using OrderProduct.Data;
 using OrderProduct.Models;
+using OrderProduct.DTO;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,15 +19,34 @@ public class ProductController: Controller
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
+    public async Task<ActionResult<IEnumerable<ProductDto>>> GetProducts()
     {
-        return Ok(await _context.Products.ToListAsync());
+        var products = await _context.Products
+            .Select(p => new ProductDto
+            {
+                ProductId = p.ProductId,
+                Name = p.Name,
+                Description = p.Description,
+                Price = p.Price
+            })
+            .ToListAsync();
+
+        return Ok(products);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<Product>> GetProduct(int id)
+    public async Task<ActionResult<ProductDto>> GetProduct(int id)
     {
-        var product = await _context.Products.FindAsync(id);
+        var product = await _context.Products
+            .Where(p => p.ProductId == id)
+            .Select(p => new ProductDto
+            {
+                ProductId = p.ProductId,
+                Name = p.Name,
+                Description = p.Description,
+                Price = p.Price
+            })
+            .FirstOrDefaultAsync();
 
         if (product == null)
             return NotFound();
@@ -35,27 +55,44 @@ public class ProductController: Controller
     }
 
     [HttpPost]
-    public async Task<ActionResult<Product>> CreateProduct(Product product)
+    public async Task<ActionResult<ProductDto>> CreateProduct(CreateProductDto dto)
     {
+       var product = new Product
+        {
+            Name = dto.Name,
+            Description = dto.Description,
+            Price = dto.Price
+        };
+
         await _context.Products.AddAsync(product);
         await _context.SaveChangesAsync();
+
+        var result = new ProductDto
+        {
+            ProductId = product.ProductId,
+            Name = product.Name,
+            Description = product.Description,
+            Price = product.Price
+        };
 
         return CreatedAtAction(
             nameof(GetProduct),
             new { id = product.ProductId },
-            product);
+            result);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateProduct(
-        int id,
-        Product product)
+    public async Task<IActionResult> UpdateProduct(int id, UpdateProductDto dto)
     {
-        if (id != product.ProductId)
-            return BadRequest();
+        var product = await _context.Products
+            .FindAsync(id);
 
-        _context.Entry(product).State =
-            EntityState.Modified;
+        if (product == null)
+            return NotFound();
+
+        product.Name = dto.Name;
+        product.Description = dto.Description;
+        product.Price = dto.Price;
 
         await _context.SaveChangesAsync();
 
