@@ -7,5 +7,5 @@ public class Product
     public string Description {get; set;} = string.Empty;
 
     public decimal Price {get; set;}
-    public ICollection<Table> OrderProducts { get; set; } = new List<Table>();
+    public ICollection<OPTable> OrderProducts { get; set; } = new List<OPTable>();
 }

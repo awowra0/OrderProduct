@@ -50,7 +50,7 @@ public class OrderController : Controller
 
         foreach (var item in dto.Products)
         {
-            order.OrderProducts.Add(new Table
+            order.OrderProducts.Add(new OPTable
             {
                 ProductId = item.ProductId,
                 Count = item.Count
@@ -90,7 +90,7 @@ public class OrderController : Controller
             }
             else
             {
-                order.OrderProducts.Add(new Table
+                order.OrderProducts.Add(new OPTable
                 {
                     ProductId = item.ProductId,
                     Count = item.Count
@@ -102,7 +102,7 @@ public class OrderController : Controller
             .Where(x => !dto.Products
                 .Any(p => p.ProductId == x.ProductId));
 
-        _context.Table.RemoveRange(productsToRemove);
+        _context.OPTable.RemoveRange(productsToRemove);
 
         await _context.SaveChangesAsync();
 
